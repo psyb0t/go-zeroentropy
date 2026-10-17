@@ -1,6 +1,7 @@
 ---
 name: go-zeroentropy
-description: "Use the unofficial ZeroEntropy Go client when writing Go code for collections, documents, retrieval queries, reranking, embeddings, indexing status, usage or administration, or when a project already imports github.com/psyb0t/go-zeroentropy. Package zeroentropy provides typed methods generated from the full public OpenAPI spec."
+description: "Unofficial Go client for the ZeroEntropy retrieval API, generated with oapi-codegen from the full public OpenAPI spec. Package zeroentropy (github.com/psyb0t/go-zeroentropy) provides typed ...WithResponse methods on ClientWithResponses for collections, documents, top-documents, top-pages and top-snippets retrieval queries, reranking, embeddings, indexing status, usage and administration, with a bearer API key set through WithRequestEditorFn. Use when Go code needs ZeroEntropy search, reranking or embeddings, or a project already imports go-zeroentropy."
+license: MIT
 homepage: https://github.com/psyb0t/go-zeroentropy
 user-invocable: true
 metadata:
@@ -9,8 +10,6 @@ metadata:
     requires:
       bins:
         - go
-      env:
-        - ZEROENTROPY_API_KEY
 permissions:
   filesystem: "Guides edits to Go source in the current project. The library reads and writes no files."
   shell: "The Go toolchain (`go get`, `go build`, `go test`) to add and compile the dependency."
@@ -23,7 +22,7 @@ Unofficial, typed Go client for the ZeroEntropy API, in package `zeroentropy` at
 
 Read [references/setup.md](references/setup.md) before choosing methods or writing requests. It lists authentication, all operations, pagination and response pitfalls.
 
-## Security and safety
+## Security & safety
 
 - Read the API key from `ZEROENTROPY_API_KEY`. The request editor sets `Authorization: Bearer <key>`. Never hardcode, commit or log the key, authorization header or document download tokens.
 - Use `https://api.zeroentropy.dev/v1` or `https://eu-api.zeroentropy.dev/v1`. Select the region that holds the user's data. Keep `/v1` in the base URL.
@@ -42,9 +41,54 @@ Read [references/setup.md](references/setup.md) before choosing methods or writi
 - The task requires a client maintained by ZeroEntropy. This client is unofficial and unaffiliated.
 - The task changes the generated client itself. Read the repository's `AGENTS.md` instead.
 
+## Finding endpoints and types
+
+The usage below covers one call. Every operation in the spec has a generated method, and the spec's descriptions are on them as Go doc comments. Look names and fields up instead of guessing. After `go get github.com/psyb0t/go-zeroentropy`, from inside your module:
+
+```bash
+go doc github.com/psyb0t/go-zeroentropy ClientWithResponsesInterface  # every endpoint method
+go doc github.com/psyb0t/go-zeroentropy TopDocumentsRequest            # one method, params type or model
+go doc -all github.com/psyb0t/go-zeroentropy                           # the whole package
+```
+
+The same documentation is at https://pkg.go.dev/github.com/psyb0t/go-zeroentropy.
+
+Method names come from the spec's operation IDs. `<OperationId>WithResponse` takes the context, then the path parameters in order, then `*<OperationId>Params` when the operation has query or header parameters, then the request body when it has one. The `JSON200` field (or `JSON201` and so on, per declared status) holds the decoded body; it is nil for any other status.
+
 ## Usage
 
-Install `github.com/psyb0t/go-zeroentropy`, create a `ClientWithResponses` with `WithRequestEditorFn`, and call `GetCollectionListCollectionsGetCollectionListPostWithResponse` with `EmptyRequest{}` to list collections. The complete example is in the repository's `example_test.go` and README.
+Install `github.com/psyb0t/go-zeroentropy`, create a `ClientWithResponses` with `WithRequestEditorFn`, and call `GetCollectionListCollectionsGetCollectionListPostWithResponse` with `EmptyRequest{}` to list collections. This is the repository's `example_test.go`:
+
+```go
+import (
+	"context"
+	"net/http"
+	"os"
+
+	"github.com/psyb0t/go-zeroentropy"
+)
+
+auth := zeroentropy.WithRequestEditorFn(func(_ context.Context, req *http.Request) error {
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("ZEROENTROPY_API_KEY"))
+
+	return nil
+})
+
+client, err := zeroentropy.NewClientWithResponses("https://api.zeroentropy.dev/v1", auth)
+if err != nil {
+	return err
+}
+
+res, err := client.GetCollectionListCollectionsGetCollectionListPostWithResponse(
+	context.Background(),
+	zeroentropy.EmptyRequest{},
+)
+if err != nil {
+	return err
+}
+
+_ = res.JSON200 // *zeroentropy.GetCollectionListResponse
+```
 
 The error return covers transport and decoding failures. HTTP errors require inspecting `StatusCode()` and `Body`; a nil Go error does not prove success. Read `JSON200.CollectionNames` only after checking `JSON200` for nil. Some successful calls use another status, such as 201 for a newly added document.
 
