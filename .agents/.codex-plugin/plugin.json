@@ -1,0 +1,22 @@
+{
+  "name": "go-zeroentropy",
+  "version": "0.1.0",
+  "description": "Unofficial Go client for the ZeroEntropy API: collections, documents, retrieval queries, reranking and status, generated from the public OpenAPI spec.",
+  "author": {
+    "name": "psyb0t",
+    "url": "https://github.com/psyb0t"
+  },
+  "homepage": "https://github.com/psyb0t/go-zeroentropy",
+  "repository": "https://github.com/psyb0t/go-zeroentropy",
+  "license": "MIT",
+  "keywords": [
+    "zeroentropy",
+    "retrieval",
+    "search",
+    "reranking",
+    "api-client",
+    "go-library",
+    "openapi"
+  ],
+  "skills": "./skills/"
+}
