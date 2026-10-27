@@ -10,7 +10,7 @@ One generated package, `zeroentropy`, at the module root, driven by `gen.go`:
 
 ## Stack
 
-- Go 1.26.9.
+- Go 1.26.10.
 - oapi-codegen, pinned as a `tool` dependency in `go.mod`.
 - Runtime: `github.com/oapi-codegen/runtime`.
 

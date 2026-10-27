@@ -4,7 +4,7 @@ This module is unofficial and not affiliated with ZeroEntropy.
 
 ## Requirements
 
-- Go 1.26.9 or newer, per `go.mod`.
+- Go 1.26.10 or newer, per `go.mod`.
 - A ZeroEntropy API key from the [dashboard](https://dashboard.zeroentropy.dev/), exported as `ZEROENTROPY_API_KEY`.
 
 ## Install
