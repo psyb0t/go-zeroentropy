@@ -37,11 +37,13 @@ Document and page-image GET endpoints use a required `token` query parameter ins
 
 ## Operations
 
-Paths below are relative to `/v1`. The full spec contains 27 operations, including endpoints marked hidden by the provider.
+Paths below are relative to `/v1`. The full spec contains 30 operations, including endpoints marked hidden by the provider.
 
 | Method | Endpoint |
 | --- | --- |
 | `CreateOrganizationAdminCreateOrganizationPostWithResponse` | `POST /admin/create-organization` |
+| `GetOrganizationAdminGetOrganizationPostWithResponse` | `POST /admin/get-organization` |
+| `UpdateOrganizationAdminUpdateOrganizationPostWithResponse` | `POST /admin/update-organization` |
 | `AddApiKeyAdminAddApiKeyPostWithResponse` | `POST /admin/add-api-key` |
 | `ListApiKeysAdminListApiKeysPostWithResponse` | `POST /admin/list-api-keys` |
 | `DeleteApiKeyAdminDeleteApiKeyPostWithResponse` | `POST /admin/delete-api-key` |
@@ -49,6 +51,7 @@ Paths below are relative to `/v1`. The full spec contains 27 operations, includi
 | `GetDocumentUsageUsageDocumentsPostWithResponse` | `POST /usage/documents` |
 | `GetQueryUsageUsageQueriesPostWithResponse` | `POST /usage/queries` |
 | `GetModelsRerankerUsageUsageModelsRerankerPostWithResponse` | `POST /usage/models/reranker` |
+| `GetModelsEmbedUsageUsageModelsEmbedPostWithResponse` | `POST /usage/models/embed` |
 | `GetModelsUsageCountersUsageModelsCountersPostWithResponse` | `POST /usage/models/counters` |
 | `GetUsageCountersUsageCountersPostWithResponse` | `POST /usage/counters` |
 | `RerankModelsRerankPostWithResponse` | `POST /models/rerank` |

@@ -6,7 +6,7 @@
 [![license](https://raw.githubusercontent.com/psyb0t/go-zeroentropy/badges/license.svg)](LICENSE)
 [![imported by](https://raw.githubusercontent.com/psyb0t/go-zeroentropy/badges/importers.svg)](https://github.com/psyb0t/go-zeroentropy/blob/badges/importers.md)
 
-Unofficial Go client for the [ZeroEntropy API](https://docs.zeroentropy.dev), generated with [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen) from the public OpenAPI document linked by ZeroEntropy's Python SDK. I am not affiliated with ZeroEntropy.
+Unofficial Go client for the [ZeroEntropy API](https://docs.zeroentropy.dev), generated with [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen) from the public OpenAPI document the ZeroEntropy API serves. I am not affiliated with ZeroEntropy.
 
 The package is `zeroentropy`, in the repository root. Everything in `client.gen.go` is generated. Don't edit it by hand, regenerate it.
 
@@ -66,7 +66,7 @@ func main() {
 
 The same code is in `example_test.go`, so `make test` checks that it compiles. Check `StatusCode()` and that `JSON200` is non-nil before using a response; HTTP errors can return a nil Go error.
 
-Method names retain the spec's operation IDs. The full spec covers 27 operations: collections, documents, document/page/snippet retrieval, reranking, embeddings, indexing status, usage and administration. Most reads use POST with a JSON body.
+Method names retain the spec's operation IDs. The full spec covers 30 operations: collections, documents, document/page/snippet retrieval, reranking, embeddings, indexing status, usage and administration. Most reads use POST with a JSON body.
 
 ## Auth
 
@@ -91,7 +91,7 @@ make generate
 
 `gen.go` declares the steps, so `make generate` is just `go generate ./...`:
 
-- `scripts/fetch-spec.sh` reads `openapi_spec_url` from [the vendor Python SDK's `.stats.yml`](https://raw.githubusercontent.com/ZeroEntropy-AI/zeroentropy-python/main/.stats.yml), then downloads that content-hashed Stainless URL to `api/openapi.json`.
+- `scripts/fetch-spec.sh` downloads the spec the API serves at `https://api.zeroentropy.dev/v1/openapi.json` to `api/openapi.json`.
 - `scripts/patch-spec.sh` writes `api/openapi.fixed.json`. It downconverts OpenAPI 3.1 nullable unions to nullable schemas, constants to singleton enums, and the homogeneous page-span tuple to array items with its length bounds. Nullable references use `allOf` so the loader retains nullability. The two download GETs' empty JSON success schemas map to `json.RawMessage`, preserving JSON bytes without decoding arbitrary objects. The resulting document declares OpenAPI 3.0.3.
 - oapi-codegen runs with `config.yaml`. The config maps `number` to `float64` to retain precision in scores and embeddings. All operations are generated, including those marked hidden in the spec.
 

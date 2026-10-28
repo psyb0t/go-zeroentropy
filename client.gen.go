@@ -277,6 +277,30 @@ func (e RerankResponseActualLatencyMode) Valid() bool {
 	}
 }
 
+// Defines values for SubscriptionType.
+const (
+	SubscriptionTypeEnterprise SubscriptionType = "enterprise"
+	SubscriptionTypeFree       SubscriptionType = "free"
+	SubscriptionTypeStarter    SubscriptionType = "starter"
+	SubscriptionTypeTeams      SubscriptionType = "teams"
+)
+
+// Valid indicates whether the value is a known member of the SubscriptionType enum.
+func (e SubscriptionType) Valid() bool {
+	switch e {
+	case SubscriptionTypeEnterprise:
+		return true
+	case SubscriptionTypeFree:
+		return true
+	case SubscriptionTypeStarter:
+		return true
+	case SubscriptionTypeTeams:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TopDocumentsRequestLatencyMode.
 const (
 	TopDocumentsRequestLatencyModeHigh TopDocumentsRequestLatencyMode = "high"
@@ -613,7 +637,7 @@ type EmbedRequest struct {
 	// InputType The input type. For retrieval tasks, either `query` or `document`.
 	InputType EmbedRequestInputType `json:"input_type"`
 
-	// Latency Whether the call will be inferenced "fast" or "slow". RateLimits for slow API calls are orders of magnitude higher, but you can expect 2-20 second latency. Fast inferences are guaranteed subsecond, but rate limits are lower. If not specified, first a "fast" call will be attempted, but if you have exceeded your fast rate limit, then a slow call will be executed. If explicitly set to "fast", then 429 will be returned if it cannot be executed fast.
+	// Latency Whether the call will be inferenced "fast" or "slow". RateLimits for slow API calls are orders of magnitude higher, but you can expect 2-20 second latency. Fast inferences are guaranteed subsecond, but rate limits are lower. If "fast" is requested and the fast tier is unavailable or rate-limited, a slow call will be executed when the model supports slow inference.
 	Latency *EmbedRequestLatency `json:"latency,omitempty"`
 
 	// Model The model ID to use for embedding. Options are: ["zembed-1"]
@@ -637,7 +661,7 @@ type EmbedRequest_Input struct {
 // EmbedRequestInputType The input type. For retrieval tasks, either `query` or `document`.
 type EmbedRequestInputType string
 
-// EmbedRequestLatency Whether the call will be inferenced "fast" or "slow". RateLimits for slow API calls are orders of magnitude higher, but you can expect 2-20 second latency. Fast inferences are guaranteed subsecond, but rate limits are lower. If not specified, first a "fast" call will be attempted, but if you have exceeded your fast rate limit, then a slow call will be executed. If explicitly set to "fast", then 429 will be returned if it cannot be executed fast.
+// EmbedRequestLatency Whether the call will be inferenced "fast" or "slow". RateLimits for slow API calls are orders of magnitude higher, but you can expect 2-20 second latency. Fast inferences are guaranteed subsecond, but rate limits are lower. If "fast" is requested and the fast tier is unavailable or rate-limited, a slow call will be executed when the model supports slow inference.
 type EmbedRequestLatency string
 
 // EmbedResponse defines model for EmbedResponse.
@@ -673,6 +697,18 @@ type EmbedUsage struct {
 
 	// TotalTokens The total number of tokens in the request. This is used for billing.
 	TotalTokens int `json:"total_tokens"`
+}
+
+// EmbedUsageResponse defines model for EmbedUsageResponse.
+type EmbedUsageResponse struct {
+	EmbeddingModel     string             `json:"embedding_model"`
+	EventCount         int                `json:"event_count"`
+	ExplicitCall       bool               `json:"explicit_call"`
+	OrganizationId     openapi_types.UUID `json:"organization_id"`
+	TotalRequestBytes  int                `json:"total_request_bytes"`
+	TotalRequestTokens int                `json:"total_request_tokens"`
+	TotalTimeTakenMs   float64            `json:"total_time_taken_ms"`
+	WindowStart        int                `json:"window_start"`
 }
 
 // EmptyRequest defines model for EmptyRequest.
@@ -721,6 +757,36 @@ type GetDocumentInfoResponse struct {
 	Document DocumentResponse `json:"document"`
 }
 
+// GetOrganizationRequest defines model for GetOrganizationRequest.
+type GetOrganizationRequest struct {
+	// OrganizationId The organization ID to retrieve.
+	OrganizationId openapi_types.UUID `json:"organization_id"`
+}
+
+// GetOrganizationResponse defines model for GetOrganizationResponse.
+type GetOrganizationResponse struct {
+	// Name The organization name.
+	Name string `json:"name"`
+
+	// OrganizationId The organization ID.
+	OrganizationId openapi_types.UUID `json:"organization_id"`
+
+	// OverrideBpmFast Admin override: bytes per minute limit with latency: fast
+	OverrideBpmFast *int `json:"override_bpm_fast"`
+
+	// OverrideBpmSlow Admin override: bytes per minute limit with latency: slow
+	OverrideBpmSlow *int `json:"override_bpm_slow"`
+
+	// OverrideMaxBytesPerRequest Admin override: max bytes per request.
+	OverrideMaxBytesPerRequest *int `json:"override_max_bytes_per_request"`
+
+	// SubscriptionTier Current subscription tier.
+	SubscriptionTier SubscriptionType `json:"subscription_tier"`
+
+	// Zdr Zero data retention enabled.
+	Zdr bool `json:"zdr"`
+}
+
 // GetPageInfoRequest defines model for GetPageInfoRequest.
 type GetPageInfoRequest struct {
 	// CollectionName The name of the collection.
@@ -766,6 +832,7 @@ type ModelsUsageCountersResponse struct {
 
 // ModelsUsageStats defines model for ModelsUsageStats.
 type ModelsUsageStats struct {
+	Embed  UsageMetric `json:"embed"`
 	Rerank UsageMetric `json:"rerank"`
 }
 
@@ -832,7 +899,7 @@ type RerankRequest struct {
 	// Documents The list of documents to rerank. Each document is a string.
 	Documents []string `json:"documents"`
 
-	// Latency Whether the call will be inferenced "fast" or "slow". RateLimits for slow API calls are orders of magnitude higher, but you can expect >10 second latency. Fast inferences are guaranteed subsecond, but rate limits are lower. If not specified, first a "fast" call will be attempted, but if you have exceeded your fast rate limit, then a slow call will be executed. If explicitly set to "fast", then 429 will be returned if it cannot be executed fast.
+	// Latency Whether the call will be inferenced "fast" or "slow". RateLimits for slow API calls are orders of magnitude higher, but you can expect >10 second latency. Fast inferences are guaranteed subsecond, but rate limits are lower. If "fast" is requested and the fast tier is unavailable or rate-limited, a slow call will be executed when the model supports slow inference.
 	Latency *RerankRequestLatency `json:"latency,omitempty"`
 
 	// Model The model ID to use for reranking. Options are: ["zerank-2", "zerank-1", "zerank-1-small"]
@@ -845,7 +912,7 @@ type RerankRequest struct {
 	TopN *int `json:"top_n,omitempty"`
 }
 
-// RerankRequestLatency Whether the call will be inferenced "fast" or "slow". RateLimits for slow API calls are orders of magnitude higher, but you can expect >10 second latency. Fast inferences are guaranteed subsecond, but rate limits are lower. If not specified, first a "fast" call will be attempted, but if you have exceeded your fast rate limit, then a slow call will be executed. If explicitly set to "fast", then 429 will be returned if it cannot be executed fast.
+// RerankRequestLatency Whether the call will be inferenced "fast" or "slow". RateLimits for slow API calls are orders of magnitude higher, but you can expect >10 second latency. Fast inferences are guaranteed subsecond, but rate limits are lower. If "fast" is requested and the fast tier is unavailable or rate-limited, a slow call will be executed when the model supports slow inference.
 type RerankRequestLatency string
 
 // RerankResponse defines model for RerankResponse.
@@ -946,7 +1013,24 @@ type StatusResponse struct {
 }
 
 // StrJson defines model for StrJson.
-type StrJson map[string]interface{}
+type StrJson struct {
+	union json.RawMessage
+}
+
+// StrJson0 defines model for StrJson.0.
+type StrJson0 = string
+
+// StrJson1 defines model for StrJson.1.
+type StrJson1 = []string
+
+// StrJson2 defines model for StrJson.2.
+type StrJson2 = []StrJson
+
+// StrJson3 defines model for StrJson.3.
+type StrJson3 map[string]StrJson
+
+// SubscriptionType defines model for SubscriptionType.
+type SubscriptionType string
 
 // TopDocumentsRequest defines model for TopDocumentsRequest.
 type TopDocumentsRequest struct {
@@ -1080,6 +1164,27 @@ type UpdateDocumentRequest struct {
 // UpdateDocumentRequestIndexStatus If the document is in the index_status of `parsing_failed or `indexing_failed`, then this endpoint allows you to update the index status to `not_parsed` and `not_indexed`, respectively. This allows the document to re-attempt to parse/index after failure.
 type UpdateDocumentRequestIndexStatus string
 
+// UpdateOrganizationRequest defines model for UpdateOrganizationRequest.
+type UpdateOrganizationRequest struct {
+	// OrganizationId The organization ID to update.
+	OrganizationId openapi_types.UUID `json:"organization_id"`
+
+	// OverrideBpmFast Admin override: bytes per minute limit with latency: fast. Set to 0 to disable.
+	OverrideBpmFast *int `json:"override_bpm_fast,omitempty"`
+
+	// OverrideBpmSlow Admin override: bytes per minute limit with latency: slow. Set to 0 to disable.
+	OverrideBpmSlow *int `json:"override_bpm_slow,omitempty"`
+
+	// OverrideMaxBytesPerRequest Admin override: max bytes per request. Set to 0 to disable.
+	OverrideMaxBytesPerRequest *int `json:"override_max_bytes_per_request,omitempty"`
+
+	// SubscriptionTier Subscription tier to set.
+	SubscriptionTier *SubscriptionType `json:"subscription_tier,omitempty"`
+
+	// Zdr Whether zero data retention should be enabled.
+	Zdr *bool `json:"zdr,omitempty"`
+}
+
 // UsageCountersResponse defines model for UsageCountersResponse.
 type UsageCountersResponse struct {
 	AllTime      UsageStats `json:"all_time"`
@@ -1158,11 +1263,17 @@ type CreateOrganizationAdminCreateOrganizationPostJSONRequestBody = CreateOrgani
 // DeleteApiKeyAdminDeleteApiKeyPostJSONRequestBody defines body for DeleteApiKeyAdminDeleteApiKeyPost for application/json ContentType.
 type DeleteApiKeyAdminDeleteApiKeyPostJSONRequestBody = DeleteAPIKeyRequest
 
+// GetOrganizationAdminGetOrganizationPostJSONRequestBody defines body for GetOrganizationAdminGetOrganizationPost for application/json ContentType.
+type GetOrganizationAdminGetOrganizationPostJSONRequestBody = GetOrganizationRequest
+
 // ListApiKeysAdminListApiKeysPostJSONRequestBody defines body for ListApiKeysAdminListApiKeysPost for application/json ContentType.
 type ListApiKeysAdminListApiKeysPostJSONRequestBody = ListAPIKeysRequest
 
 // UpdateApiKeyAdminUpdateApiKeyPostJSONRequestBody defines body for UpdateApiKeyAdminUpdateApiKeyPost for application/json ContentType.
 type UpdateApiKeyAdminUpdateApiKeyPostJSONRequestBody = UpdateAPIKeyRequest
+
+// UpdateOrganizationAdminUpdateOrganizationPostJSONRequestBody defines body for UpdateOrganizationAdminUpdateOrganizationPost for application/json ContentType.
+type UpdateOrganizationAdminUpdateOrganizationPostJSONRequestBody = UpdateOrganizationRequest
 
 // AddCollectionCollectionsAddCollectionPostJSONRequestBody defines body for AddCollectionCollectionsAddCollectionPost for application/json ContentType.
 type AddCollectionCollectionsAddCollectionPostJSONRequestBody = AddCollectionRequest
@@ -1211,6 +1322,9 @@ type GetStatusStatusGetStatusPostJSONRequestBody = StatusRequest
 
 // GetDocumentUsageUsageDocumentsPostJSONRequestBody defines body for GetDocumentUsageUsageDocumentsPost for application/json ContentType.
 type GetDocumentUsageUsageDocumentsPostJSONRequestBody = UsageRequest
+
+// GetModelsEmbedUsageUsageModelsEmbedPostJSONRequestBody defines body for GetModelsEmbedUsageUsageModelsEmbedPost for application/json ContentType.
+type GetModelsEmbedUsageUsageModelsEmbedPostJSONRequestBody = UsageRequest
 
 // GetModelsRerankerUsageUsageModelsRerankerPostJSONRequestBody defines body for GetModelsRerankerUsageUsageModelsRerankerPost for application/json ContentType.
 type GetModelsRerankerUsageUsageModelsRerankerPostJSONRequestBody = UsageRequest
@@ -1581,6 +1695,120 @@ func (t *EmbedResult_Embedding) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsStrJson0 returns the union data inside the StrJson as a StrJson0
+func (t StrJson) AsStrJson0() (StrJson0, error) {
+	var body StrJson0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStrJson0 overwrites any union data inside the StrJson as the provided StrJson0
+func (t *StrJson) FromStrJson0(v StrJson0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStrJson0 performs a merge with any union data inside the StrJson, using the provided StrJson0
+func (t *StrJson) MergeStrJson0(v StrJson0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsStrJson1 returns the union data inside the StrJson as a StrJson1
+func (t StrJson) AsStrJson1() (StrJson1, error) {
+	var body StrJson1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStrJson1 overwrites any union data inside the StrJson as the provided StrJson1
+func (t *StrJson) FromStrJson1(v StrJson1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStrJson1 performs a merge with any union data inside the StrJson, using the provided StrJson1
+func (t *StrJson) MergeStrJson1(v StrJson1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsStrJson2 returns the union data inside the StrJson as a StrJson2
+func (t StrJson) AsStrJson2() (StrJson2, error) {
+	var body StrJson2
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStrJson2 overwrites any union data inside the StrJson as the provided StrJson2
+func (t *StrJson) FromStrJson2(v StrJson2) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStrJson2 performs a merge with any union data inside the StrJson, using the provided StrJson2
+func (t *StrJson) MergeStrJson2(v StrJson2) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsStrJson3 returns the union data inside the StrJson as a StrJson3
+func (t StrJson) AsStrJson3() (StrJson3, error) {
+	var body StrJson3
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromStrJson3 overwrites any union data inside the StrJson as the provided StrJson3
+func (t *StrJson) FromStrJson3(v StrJson3) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeStrJson3 performs a merge with any union data inside the StrJson, using the provided StrJson3
+func (t *StrJson) MergeStrJson3(v StrJson3) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t StrJson) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *StrJson) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsValidationErrorLoc0 returns the union data inside the ValidationError_Loc_Item as a ValidationErrorLoc0
 func (t ValidationError_Loc_Item) AsValidationErrorLoc0() (ValidationErrorLoc0, error) {
 	var body ValidationErrorLoc0
@@ -1775,6 +2003,24 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/delete-api-key (the `DeleteApiKeyAdminDeleteApiKeyPost` operationId).
 	DeleteApiKeyAdminDeleteApiKeyPost(ctx context.Context, body DeleteApiKeyAdminDeleteApiKeyPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetOrganizationAdminGetOrganizationPostWithBody Get Organization
+	//
+	// Returns organization details, including rate limits and ZDR state.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/get-organization (the `GetOrganizationAdminGetOrganizationPost` operationId).
+	GetOrganizationAdminGetOrganizationPostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetOrganizationAdminGetOrganizationPost Get Organization
+	//
+	// Returns organization details, including rate limits and ZDR state.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/get-organization (the `GetOrganizationAdminGetOrganizationPost` operationId).
+	GetOrganizationAdminGetOrganizationPost(ctx context.Context, body GetOrganizationAdminGetOrganizationPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListApiKeysAdminListApiKeysPostWithBody List Api Keys
 	//
 	// Lists all API keys for the specified organization.
@@ -1810,6 +2056,28 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /admin/update-api-key (the `UpdateApiKeyAdminUpdateApiKeyPost` operationId).
 	UpdateApiKeyAdminUpdateApiKeyPost(ctx context.Context, body UpdateApiKeyAdminUpdateApiKeyPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateOrganizationAdminUpdateOrganizationPostWithBody Update Organization
+	//
+	// Updates subscription tier, rate limit overrides, and/or ZDR state for an organization.
+	//
+	// NOTE: Setting a rate limit override to 0 will disable the override and cause the organization to fall back to the default limits for their subscription tier.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/update-organization (the `UpdateOrganizationAdminUpdateOrganizationPost` operationId).
+	UpdateOrganizationAdminUpdateOrganizationPostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateOrganizationAdminUpdateOrganizationPost Update Organization
+	//
+	// Updates subscription tier, rate limit overrides, and/or ZDR state for an organization.
+	//
+	// NOTE: Setting a rate limit override to 0 will disable the override and cause the organization to fall back to the default limits for their subscription tier.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/update-organization (the `UpdateOrganizationAdminUpdateOrganizationPost` operationId).
+	UpdateOrganizationAdminUpdateOrganizationPost(ctx context.Context, body UpdateOrganizationAdminUpdateOrganizationPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// AddCollectionCollectionsAddCollectionPostWithBody Add Collection
 	//
@@ -2059,7 +2327,13 @@ type ClientInterface interface {
 	//
 	// The results will be returned in the same order as the text provided. The embedding is such that queries will have high cosine similarity with documents that are relevant to that query.
 	//
-	// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+	// Organizations will, by default, have a ratelimit of `500000` bytes-per-minute. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+	//
+	// The "bytes" used by a request is calculated as `sum(150 + s.encode('utf-8') for s in input)`. Note a baseline overhead of `150` bytes. The maximum per-request payload size is `5000000` bytes, and the maximum number of inputs per request is `2048`.
+	//
+	// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+	//
+	// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -2072,7 +2346,13 @@ type ClientInterface interface {
 	//
 	// The results will be returned in the same order as the text provided. The embedding is such that queries will have high cosine similarity with documents that are relevant to that query.
 	//
-	// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+	// Organizations will, by default, have a ratelimit of `500000` bytes-per-minute. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+	//
+	// The "bytes" used by a request is calculated as `sum(150 + s.encode('utf-8') for s in input)`. Note a baseline overhead of `150` bytes. The maximum per-request payload size is `5000000` bytes, and the maximum number of inputs per request is `2048`.
+	//
+	// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+	//
+	// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -2083,9 +2363,15 @@ type ClientInterface interface {
 	//
 	// Reranks the provided documents, according to the provided query.
 	//
-	// The results will be sorted by descending order of relevance. For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
+	// For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
 	//
-	// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+	// Organizations will, by default, have a ratelimit of `500,000` bytes-per-minute (BPM) and `1000` requests-per-minute (RPM). Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+	//
+	// The "bytes" used by a request is calculated as `sum(150 + query.encode('utf-8') + d.encode('utf-8') for d in documents)`. Note a baseline overhead of `150` bytes, and that the query bytes are included for each document, as rerankers are cross-encoders. The maximum per-request payload size is `5000000` bytes.
+	//
+	// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+	//
+	// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -2096,9 +2382,15 @@ type ClientInterface interface {
 	//
 	// Reranks the provided documents, according to the provided query.
 	//
-	// The results will be sorted by descending order of relevance. For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
+	// For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
 	//
-	// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+	// Organizations will, by default, have a ratelimit of `500,000` bytes-per-minute (BPM) and `1000` requests-per-minute (RPM). Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+	//
+	// The "bytes" used by a request is calculated as `sum(150 + query.encode('utf-8') + d.encode('utf-8') for d in documents)`. Note a baseline overhead of `150` bytes, and that the query bytes are included for each document, as rerankers are cross-encoders. The maximum per-request payload size is `5000000` bytes.
+	//
+	// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+	//
+	// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -2220,6 +2512,30 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /usage/models/counters (the `GetModelsUsageCountersUsageModelsCountersPost` operationId).
 	GetModelsUsageCountersUsageModelsCountersPost(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetModelsEmbedUsageUsageModelsEmbedPostWithBody Get Models Embed Usage
+	//
+	// Get embedding usage analytics with model breakdown.
+	//
+	// Note: Embed events don't have collection_id, so collection filtering is not supported.
+	// If collection_names are provided in the request, they will be ignored.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /usage/models/embed (the `GetModelsEmbedUsageUsageModelsEmbedPost` operationId).
+	GetModelsEmbedUsageUsageModelsEmbedPostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetModelsEmbedUsageUsageModelsEmbedPost Get Models Embed Usage
+	//
+	// Get embedding usage analytics with model breakdown.
+	//
+	// Note: Embed events don't have collection_id, so collection filtering is not supported.
+	// If collection_names are provided in the request, they will be ignored.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /usage/models/embed (the `GetModelsEmbedUsageUsageModelsEmbedPost` operationId).
+	GetModelsEmbedUsageUsageModelsEmbedPost(ctx context.Context, body GetModelsEmbedUsageUsageModelsEmbedPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetModelsRerankerUsageUsageModelsRerankerPostWithBody Get Models Reranker Usage
 	//
@@ -2382,6 +2698,44 @@ func (c *Client) DeleteApiKeyAdminDeleteApiKeyPost(ctx context.Context, body Del
 	return c.Client.Do(req)
 }
 
+// GetOrganizationAdminGetOrganizationPostWithBody Get Organization
+//
+// Returns organization details, including rate limits and ZDR state.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/get-organization (the `GetOrganizationAdminGetOrganizationPost` operationId).
+func (c *Client) GetOrganizationAdminGetOrganizationPostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetOrganizationAdminGetOrganizationPostRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetOrganizationAdminGetOrganizationPost Get Organization
+//
+// Returns organization details, including rate limits and ZDR state.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/get-organization (the `GetOrganizationAdminGetOrganizationPost` operationId).
+func (c *Client) GetOrganizationAdminGetOrganizationPost(ctx context.Context, body GetOrganizationAdminGetOrganizationPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetOrganizationAdminGetOrganizationPostRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListApiKeysAdminListApiKeysPostWithBody List Api Keys
 //
 // Lists all API keys for the specified organization.
@@ -2448,6 +2802,48 @@ func (c *Client) UpdateApiKeyAdminUpdateApiKeyPostWithBody(ctx context.Context, 
 // Corresponds with POST /admin/update-api-key (the `UpdateApiKeyAdminUpdateApiKeyPost` operationId).
 func (c *Client) UpdateApiKeyAdminUpdateApiKeyPost(ctx context.Context, body UpdateApiKeyAdminUpdateApiKeyPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateApiKeyAdminUpdateApiKeyPostRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateOrganizationAdminUpdateOrganizationPostWithBody Update Organization
+//
+// Updates subscription tier, rate limit overrides, and/or ZDR state for an organization.
+//
+// NOTE: Setting a rate limit override to 0 will disable the override and cause the organization to fall back to the default limits for their subscription tier.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/update-organization (the `UpdateOrganizationAdminUpdateOrganizationPost` operationId).
+func (c *Client) UpdateOrganizationAdminUpdateOrganizationPostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateOrganizationAdminUpdateOrganizationPostRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateOrganizationAdminUpdateOrganizationPost Update Organization
+//
+// Updates subscription tier, rate limit overrides, and/or ZDR state for an organization.
+//
+// NOTE: Setting a rate limit override to 0 will disable the override and cause the organization to fall back to the default limits for their subscription tier.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/update-organization (the `UpdateOrganizationAdminUpdateOrganizationPost` operationId).
+func (c *Client) UpdateOrganizationAdminUpdateOrganizationPost(ctx context.Context, body UpdateOrganizationAdminUpdateOrganizationPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateOrganizationAdminUpdateOrganizationPostRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2906,7 +3302,13 @@ func (c *Client) UpdateDocumentDocumentsUpdateDocumentPost(ctx context.Context, 
 //
 // The results will be returned in the same order as the text provided. The embedding is such that queries will have high cosine similarity with documents that are relevant to that query.
 //
-// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+// Organizations will, by default, have a ratelimit of `500000` bytes-per-minute. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+//
+// The "bytes" used by a request is calculated as `sum(150 + s.encode('utf-8') for s in input)`. Note a baseline overhead of `150` bytes. The maximum per-request payload size is `5000000` bytes, and the maximum number of inputs per request is `2048`.
+//
+// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+//
+// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 //
 // Takes any type of body and a specified content type.
 //
@@ -2929,7 +3331,13 @@ func (c *Client) EmbedModelsEmbedPostWithBody(ctx context.Context, contentType s
 //
 // The results will be returned in the same order as the text provided. The embedding is such that queries will have high cosine similarity with documents that are relevant to that query.
 //
-// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+// Organizations will, by default, have a ratelimit of `500000` bytes-per-minute. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+//
+// The "bytes" used by a request is calculated as `sum(150 + s.encode('utf-8') for s in input)`. Note a baseline overhead of `150` bytes. The maximum per-request payload size is `5000000` bytes, and the maximum number of inputs per request is `2048`.
+//
+// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+//
+// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 //
 // Takes a body of the `application/json` content type.
 //
@@ -2950,9 +3358,15 @@ func (c *Client) EmbedModelsEmbedPost(ctx context.Context, body EmbedModelsEmbed
 //
 // Reranks the provided documents, according to the provided query.
 //
-// The results will be sorted by descending order of relevance. For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
+// For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
 //
-// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+// Organizations will, by default, have a ratelimit of `500,000` bytes-per-minute (BPM) and `1000` requests-per-minute (RPM). Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+//
+// The "bytes" used by a request is calculated as `sum(150 + query.encode('utf-8') + d.encode('utf-8') for d in documents)`. Note a baseline overhead of `150` bytes, and that the query bytes are included for each document, as rerankers are cross-encoders. The maximum per-request payload size is `5000000` bytes.
+//
+// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+//
+// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 //
 // Takes any type of body and a specified content type.
 //
@@ -2973,9 +3387,15 @@ func (c *Client) RerankModelsRerankPostWithBody(ctx context.Context, contentType
 //
 // Reranks the provided documents, according to the provided query.
 //
-// The results will be sorted by descending order of relevance. For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
+// For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
 //
-// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+// Organizations will, by default, have a ratelimit of `500,000` bytes-per-minute (BPM) and `1000` requests-per-minute (RPM). Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+//
+// The "bytes" used by a request is calculated as `sum(150 + query.encode('utf-8') + d.encode('utf-8') for d in documents)`. Note a baseline overhead of `150` bytes, and that the query bytes are included for each document, as rerankers are cross-encoders. The maximum per-request payload size is `5000000` bytes.
+//
+// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+//
+// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 //
 // Takes a body of the `application/json` content type.
 //
@@ -3228,6 +3648,50 @@ func (c *Client) GetModelsUsageCountersUsageModelsCountersPost(ctx context.Conte
 	return c.Client.Do(req)
 }
 
+// GetModelsEmbedUsageUsageModelsEmbedPostWithBody Get Models Embed Usage
+//
+// Get embedding usage analytics with model breakdown.
+//
+// Note: Embed events don't have collection_id, so collection filtering is not supported.
+// If collection_names are provided in the request, they will be ignored.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /usage/models/embed (the `GetModelsEmbedUsageUsageModelsEmbedPost` operationId).
+func (c *Client) GetModelsEmbedUsageUsageModelsEmbedPostWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetModelsEmbedUsageUsageModelsEmbedPostRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetModelsEmbedUsageUsageModelsEmbedPost Get Models Embed Usage
+//
+// Get embedding usage analytics with model breakdown.
+//
+// Note: Embed events don't have collection_id, so collection filtering is not supported.
+// If collection_names are provided in the request, they will be ignored.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /usage/models/embed (the `GetModelsEmbedUsageUsageModelsEmbedPost` operationId).
+func (c *Client) GetModelsEmbedUsageUsageModelsEmbedPost(ctx context.Context, body GetModelsEmbedUsageUsageModelsEmbedPostJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetModelsEmbedUsageUsageModelsEmbedPostRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetModelsRerankerUsageUsageModelsRerankerPostWithBody Get Models Reranker Usage
 //
 // Get reranker usage analytics with model breakdown.
@@ -3430,6 +3894,46 @@ func NewDeleteApiKeyAdminDeleteApiKeyPostRequestWithBody(server string, contentT
 	return req, nil
 }
 
+// NewGetOrganizationAdminGetOrganizationPostRequest calls the generic GetOrganizationAdminGetOrganizationPost builder with application/json body
+func NewGetOrganizationAdminGetOrganizationPostRequest(server string, body GetOrganizationAdminGetOrganizationPostJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewGetOrganizationAdminGetOrganizationPostRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewGetOrganizationAdminGetOrganizationPostRequestWithBody constructs an http.Request for the GetOrganizationAdminGetOrganizationPost method, with any body, and a specified content type
+func NewGetOrganizationAdminGetOrganizationPostRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/get-organization")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListApiKeysAdminListApiKeysPostRequest calls the generic ListApiKeysAdminListApiKeysPost builder with application/json body
 func NewListApiKeysAdminListApiKeysPostRequest(server string, body ListApiKeysAdminListApiKeysPostJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -3491,6 +3995,46 @@ func NewUpdateApiKeyAdminUpdateApiKeyPostRequestWithBody(server string, contentT
 	}
 
 	operationPath := fmt.Sprintf("/admin/update-api-key")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateOrganizationAdminUpdateOrganizationPostRequest calls the generic UpdateOrganizationAdminUpdateOrganizationPost builder with application/json body
+func NewUpdateOrganizationAdminUpdateOrganizationPostRequest(server string, body UpdateOrganizationAdminUpdateOrganizationPostJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateOrganizationAdminUpdateOrganizationPostRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdateOrganizationAdminUpdateOrganizationPostRequestWithBody constructs an http.Request for the UpdateOrganizationAdminUpdateOrganizationPost method, with any body, and a specified content type
+func NewUpdateOrganizationAdminUpdateOrganizationPostRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/update-organization")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -4304,6 +4848,46 @@ func NewGetModelsUsageCountersUsageModelsCountersPostRequest(server string) (*ht
 	return req, nil
 }
 
+// NewGetModelsEmbedUsageUsageModelsEmbedPostRequest calls the generic GetModelsEmbedUsageUsageModelsEmbedPost builder with application/json body
+func NewGetModelsEmbedUsageUsageModelsEmbedPostRequest(server string, body GetModelsEmbedUsageUsageModelsEmbedPostJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewGetModelsEmbedUsageUsageModelsEmbedPostRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewGetModelsEmbedUsageUsageModelsEmbedPostRequestWithBody constructs an http.Request for the GetModelsEmbedUsageUsageModelsEmbedPost method, with any body, and a specified content type
+func NewGetModelsEmbedUsageUsageModelsEmbedPostRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/usage/models/embed")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetModelsRerankerUsageUsageModelsRerankerPostRequest calls the generic GetModelsRerankerUsageUsageModelsRerankerPost builder with application/json body
 func NewGetModelsRerankerUsageUsageModelsRerankerPostRequest(server string, body GetModelsRerankerUsageUsageModelsRerankerPostJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -4486,6 +5070,24 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/delete-api-key (the `DeleteApiKeyAdminDeleteApiKeyPost` operationId).
 	DeleteApiKeyAdminDeleteApiKeyPostWithResponse(ctx context.Context, body DeleteApiKeyAdminDeleteApiKeyPostJSONRequestBody, reqEditors ...RequestEditorFn) (*DeleteApiKeyAdminDeleteApiKeyPostResponse, error)
 
+	// GetOrganizationAdminGetOrganizationPostWithBodyWithResponse Get Organization
+	//
+	// Returns organization details, including rate limits and ZDR state.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/get-organization (the `GetOrganizationAdminGetOrganizationPost` operationId).
+	GetOrganizationAdminGetOrganizationPostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GetOrganizationAdminGetOrganizationPostResponse, error)
+
+	// GetOrganizationAdminGetOrganizationPostWithResponse Get Organization
+	//
+	// Returns organization details, including rate limits and ZDR state.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/get-organization (the `GetOrganizationAdminGetOrganizationPost` operationId).
+	GetOrganizationAdminGetOrganizationPostWithResponse(ctx context.Context, body GetOrganizationAdminGetOrganizationPostJSONRequestBody, reqEditors ...RequestEditorFn) (*GetOrganizationAdminGetOrganizationPostResponse, error)
+
 	// ListApiKeysAdminListApiKeysPostWithBodyWithResponse List Api Keys
 	//
 	// Lists all API keys for the specified organization.
@@ -4521,6 +5123,28 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /admin/update-api-key (the `UpdateApiKeyAdminUpdateApiKeyPost` operationId).
 	UpdateApiKeyAdminUpdateApiKeyPostWithResponse(ctx context.Context, body UpdateApiKeyAdminUpdateApiKeyPostJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateApiKeyAdminUpdateApiKeyPostResponse, error)
+
+	// UpdateOrganizationAdminUpdateOrganizationPostWithBodyWithResponse Update Organization
+	//
+	// Updates subscription tier, rate limit overrides, and/or ZDR state for an organization.
+	//
+	// NOTE: Setting a rate limit override to 0 will disable the override and cause the organization to fall back to the default limits for their subscription tier.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/update-organization (the `UpdateOrganizationAdminUpdateOrganizationPost` operationId).
+	UpdateOrganizationAdminUpdateOrganizationPostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOrganizationAdminUpdateOrganizationPostResponse, error)
+
+	// UpdateOrganizationAdminUpdateOrganizationPostWithResponse Update Organization
+	//
+	// Updates subscription tier, rate limit overrides, and/or ZDR state for an organization.
+	//
+	// NOTE: Setting a rate limit override to 0 will disable the override and cause the organization to fall back to the default limits for their subscription tier.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/update-organization (the `UpdateOrganizationAdminUpdateOrganizationPost` operationId).
+	UpdateOrganizationAdminUpdateOrganizationPostWithResponse(ctx context.Context, body UpdateOrganizationAdminUpdateOrganizationPostJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOrganizationAdminUpdateOrganizationPostResponse, error)
 
 	// AddCollectionCollectionsAddCollectionPostWithBodyWithResponse Add Collection
 	//
@@ -4774,7 +5398,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// The results will be returned in the same order as the text provided. The embedding is such that queries will have high cosine similarity with documents that are relevant to that query.
 	//
-	// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+	// Organizations will, by default, have a ratelimit of `500000` bytes-per-minute. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+	//
+	// The "bytes" used by a request is calculated as `sum(150 + s.encode('utf-8') for s in input)`. Note a baseline overhead of `150` bytes. The maximum per-request payload size is `5000000` bytes, and the maximum number of inputs per request is `2048`.
+	//
+	// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+	//
+	// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -4787,7 +5417,13 @@ type ClientWithResponsesInterface interface {
 	//
 	// The results will be returned in the same order as the text provided. The embedding is such that queries will have high cosine similarity with documents that are relevant to that query.
 	//
-	// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+	// Organizations will, by default, have a ratelimit of `500000` bytes-per-minute. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+	//
+	// The "bytes" used by a request is calculated as `sum(150 + s.encode('utf-8') for s in input)`. Note a baseline overhead of `150` bytes. The maximum per-request payload size is `5000000` bytes, and the maximum number of inputs per request is `2048`.
+	//
+	// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+	//
+	// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -4798,9 +5434,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Reranks the provided documents, according to the provided query.
 	//
-	// The results will be sorted by descending order of relevance. For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
+	// For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
 	//
-	// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+	// Organizations will, by default, have a ratelimit of `500,000` bytes-per-minute (BPM) and `1000` requests-per-minute (RPM). Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+	//
+	// The "bytes" used by a request is calculated as `sum(150 + query.encode('utf-8') + d.encode('utf-8') for d in documents)`. Note a baseline overhead of `150` bytes, and that the query bytes are included for each document, as rerankers are cross-encoders. The maximum per-request payload size is `5000000` bytes.
+	//
+	// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+	//
+	// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -4811,9 +5453,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Reranks the provided documents, according to the provided query.
 	//
-	// The results will be sorted by descending order of relevance. For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
+	// For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
 	//
-	// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+	// Organizations will, by default, have a ratelimit of `500,000` bytes-per-minute (BPM) and `1000` requests-per-minute (RPM). Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+	//
+	// The "bytes" used by a request is calculated as `sum(150 + query.encode('utf-8') + d.encode('utf-8') for d in documents)`. Note a baseline overhead of `150` bytes, and that the query bytes are included for each document, as rerankers are cross-encoders. The maximum per-request payload size is `5000000` bytes.
+	//
+	// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+	//
+	// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -4939,6 +5587,30 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /usage/models/counters (the `GetModelsUsageCountersUsageModelsCountersPost` operationId).
 	GetModelsUsageCountersUsageModelsCountersPostWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetModelsUsageCountersUsageModelsCountersPostResponse, error)
+
+	// GetModelsEmbedUsageUsageModelsEmbedPostWithBodyWithResponse Get Models Embed Usage
+	//
+	// Get embedding usage analytics with model breakdown.
+	//
+	// Note: Embed events don't have collection_id, so collection filtering is not supported.
+	// If collection_names are provided in the request, they will be ignored.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /usage/models/embed (the `GetModelsEmbedUsageUsageModelsEmbedPost` operationId).
+	GetModelsEmbedUsageUsageModelsEmbedPostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GetModelsEmbedUsageUsageModelsEmbedPostResponse, error)
+
+	// GetModelsEmbedUsageUsageModelsEmbedPostWithResponse Get Models Embed Usage
+	//
+	// Get embedding usage analytics with model breakdown.
+	//
+	// Note: Embed events don't have collection_id, so collection filtering is not supported.
+	// If collection_names are provided in the request, they will be ignored.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /usage/models/embed (the `GetModelsEmbedUsageUsageModelsEmbedPost` operationId).
+	GetModelsEmbedUsageUsageModelsEmbedPostWithResponse(ctx context.Context, body GetModelsEmbedUsageUsageModelsEmbedPostJSONRequestBody, reqEditors ...RequestEditorFn) (*GetModelsEmbedUsageUsageModelsEmbedPostResponse, error)
 
 	// GetModelsRerankerUsageUsageModelsRerankerPostWithBodyWithResponse Get Models Reranker Usage
 	//
@@ -5127,6 +5799,54 @@ func (r DeleteApiKeyAdminDeleteApiKeyPostResponse) ContentType() string {
 	return ""
 }
 
+type GetOrganizationAdminGetOrganizationPostResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *GetOrganizationResponse
+	// JSON422 the response for an HTTP 422 `application/json` response
+	JSON422 *HTTPValidationError
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetOrganizationAdminGetOrganizationPostResponse) GetJSON200() *GetOrganizationResponse {
+	return r.JSON200
+}
+
+// GetJSON422 returns the response for an HTTP 422 `application/json` response
+func (r GetOrganizationAdminGetOrganizationPostResponse) GetJSON422() *HTTPValidationError {
+	return r.JSON422
+}
+
+// GetBody returns the raw response body bytes
+func (r GetOrganizationAdminGetOrganizationPostResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetOrganizationAdminGetOrganizationPostResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetOrganizationAdminGetOrganizationPostResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetOrganizationAdminGetOrganizationPostResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListApiKeysAdminListApiKeysPostResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -5217,6 +5937,54 @@ func (r UpdateApiKeyAdminUpdateApiKeyPostResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateApiKeyAdminUpdateApiKeyPostResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type UpdateOrganizationAdminUpdateOrganizationPostResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DefaultResponse
+	// JSON422 the response for an HTTP 422 `application/json` response
+	JSON422 *HTTPValidationError
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateOrganizationAdminUpdateOrganizationPostResponse) GetJSON200() *DefaultResponse {
+	return r.JSON200
+}
+
+// GetJSON422 returns the response for an HTTP 422 `application/json` response
+func (r UpdateOrganizationAdminUpdateOrganizationPostResponse) GetJSON422() *HTTPValidationError {
+	return r.JSON422
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateOrganizationAdminUpdateOrganizationPostResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateOrganizationAdminUpdateOrganizationPostResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateOrganizationAdminUpdateOrganizationPostResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateOrganizationAdminUpdateOrganizationPostResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -6183,6 +6951,54 @@ func (r GetModelsUsageCountersUsageModelsCountersPostResponse) ContentType() str
 	return ""
 }
 
+type GetModelsEmbedUsageUsageModelsEmbedPostResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *[]EmbedUsageResponse
+	// JSON422 the response for an HTTP 422 `application/json` response
+	JSON422 *HTTPValidationError
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetModelsEmbedUsageUsageModelsEmbedPostResponse) GetJSON200() *[]EmbedUsageResponse {
+	return r.JSON200
+}
+
+// GetJSON422 returns the response for an HTTP 422 `application/json` response
+func (r GetModelsEmbedUsageUsageModelsEmbedPostResponse) GetJSON422() *HTTPValidationError {
+	return r.JSON422
+}
+
+// GetBody returns the raw response body bytes
+func (r GetModelsEmbedUsageUsageModelsEmbedPostResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetModelsEmbedUsageUsageModelsEmbedPostResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetModelsEmbedUsageUsageModelsEmbedPostResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetModelsEmbedUsageUsageModelsEmbedPostResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type GetModelsRerankerUsageUsageModelsRerankerPostResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -6373,6 +7189,36 @@ func (c *ClientWithResponses) DeleteApiKeyAdminDeleteApiKeyPostWithResponse(ctx 
 	return ParseDeleteApiKeyAdminDeleteApiKeyPostResponse(rsp)
 }
 
+// GetOrganizationAdminGetOrganizationPostWithBodyWithResponse Get Organization
+//
+// Returns organization details, including rate limits and ZDR state.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/get-organization (the `GetOrganizationAdminGetOrganizationPost` operationId).
+func (c *ClientWithResponses) GetOrganizationAdminGetOrganizationPostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GetOrganizationAdminGetOrganizationPostResponse, error) {
+	rsp, err := c.GetOrganizationAdminGetOrganizationPostWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetOrganizationAdminGetOrganizationPostResponse(rsp)
+}
+
+// GetOrganizationAdminGetOrganizationPostWithResponse Get Organization
+//
+// Returns organization details, including rate limits and ZDR state.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/get-organization (the `GetOrganizationAdminGetOrganizationPost` operationId).
+func (c *ClientWithResponses) GetOrganizationAdminGetOrganizationPostWithResponse(ctx context.Context, body GetOrganizationAdminGetOrganizationPostJSONRequestBody, reqEditors ...RequestEditorFn) (*GetOrganizationAdminGetOrganizationPostResponse, error) {
+	rsp, err := c.GetOrganizationAdminGetOrganizationPost(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetOrganizationAdminGetOrganizationPostResponse(rsp)
+}
+
 // ListApiKeysAdminListApiKeysPostWithBodyWithResponse List Api Keys
 //
 // Lists all API keys for the specified organization.
@@ -6431,6 +7277,40 @@ func (c *ClientWithResponses) UpdateApiKeyAdminUpdateApiKeyPostWithResponse(ctx 
 		return nil, err
 	}
 	return ParseUpdateApiKeyAdminUpdateApiKeyPostResponse(rsp)
+}
+
+// UpdateOrganizationAdminUpdateOrganizationPostWithBodyWithResponse Update Organization
+//
+// Updates subscription tier, rate limit overrides, and/or ZDR state for an organization.
+//
+// NOTE: Setting a rate limit override to 0 will disable the override and cause the organization to fall back to the default limits for their subscription tier.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/update-organization (the `UpdateOrganizationAdminUpdateOrganizationPost` operationId).
+func (c *ClientWithResponses) UpdateOrganizationAdminUpdateOrganizationPostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOrganizationAdminUpdateOrganizationPostResponse, error) {
+	rsp, err := c.UpdateOrganizationAdminUpdateOrganizationPostWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateOrganizationAdminUpdateOrganizationPostResponse(rsp)
+}
+
+// UpdateOrganizationAdminUpdateOrganizationPostWithResponse Update Organization
+//
+// Updates subscription tier, rate limit overrides, and/or ZDR state for an organization.
+//
+// NOTE: Setting a rate limit override to 0 will disable the override and cause the organization to fall back to the default limits for their subscription tier.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/update-organization (the `UpdateOrganizationAdminUpdateOrganizationPost` operationId).
+func (c *ClientWithResponses) UpdateOrganizationAdminUpdateOrganizationPostWithResponse(ctx context.Context, body UpdateOrganizationAdminUpdateOrganizationPostJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOrganizationAdminUpdateOrganizationPostResponse, error) {
+	rsp, err := c.UpdateOrganizationAdminUpdateOrganizationPost(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateOrganizationAdminUpdateOrganizationPostResponse(rsp)
 }
 
 // AddCollectionCollectionsAddCollectionPostWithBodyWithResponse Add Collection
@@ -6805,7 +7685,13 @@ func (c *ClientWithResponses) UpdateDocumentDocumentsUpdateDocumentPostWithRespo
 //
 // The results will be returned in the same order as the text provided. The embedding is such that queries will have high cosine similarity with documents that are relevant to that query.
 //
-// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+// Organizations will, by default, have a ratelimit of `500000` bytes-per-minute. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+//
+// The "bytes" used by a request is calculated as `sum(150 + s.encode('utf-8') for s in input)`. Note a baseline overhead of `150` bytes. The maximum per-request payload size is `5000000` bytes, and the maximum number of inputs per request is `2048`.
+//
+// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+//
+// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -6824,7 +7710,13 @@ func (c *ClientWithResponses) EmbedModelsEmbedPostWithBodyWithResponse(ctx conte
 //
 // The results will be returned in the same order as the text provided. The embedding is such that queries will have high cosine similarity with documents that are relevant to that query.
 //
-// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+// Organizations will, by default, have a ratelimit of `500000` bytes-per-minute. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+//
+// The "bytes" used by a request is calculated as `sum(150 + s.encode('utf-8') for s in input)`. Note a baseline overhead of `150` bytes. The maximum per-request payload size is `5000000` bytes, and the maximum number of inputs per request is `2048`.
+//
+// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+//
+// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -6841,9 +7733,15 @@ func (c *ClientWithResponses) EmbedModelsEmbedPostWithResponse(ctx context.Conte
 //
 // Reranks the provided documents, according to the provided query.
 //
-// The results will be sorted by descending order of relevance. For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
+// For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
 //
-// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+// Organizations will, by default, have a ratelimit of `500,000` bytes-per-minute (BPM) and `1000` requests-per-minute (RPM). Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+//
+// The "bytes" used by a request is calculated as `sum(150 + query.encode('utf-8') + d.encode('utf-8') for d in documents)`. Note a baseline overhead of `150` bytes, and that the query bytes are included for each document, as rerankers are cross-encoders. The maximum per-request payload size is `5000000` bytes.
+//
+// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+//
+// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -6860,9 +7758,15 @@ func (c *ClientWithResponses) RerankModelsRerankPostWithBodyWithResponse(ctx con
 //
 // Reranks the provided documents, according to the provided query.
 //
-// The results will be sorted by descending order of relevance. For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
+// For each document, the index and the score will be returned. The index is relative to the documents array that was passed in. The score is the query-document relevancy determined by the reranker model. The results will be returned in descending order of relevance.
 //
-// Organizations will, by default, have a ratelimit of `2,500,000` bytes-per-minute and 1000 QPM. Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `20,000,000` bytes-per-minute. If even this is exceeded, you will get a `429` error. To request higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
+// Organizations will, by default, have a ratelimit of `500,000` bytes-per-minute (BPM) and `1000` requests-per-minute (RPM). Ratelimits are refreshed every 15 seconds. If this is exceeded, requests will be throttled into `latency: "slow"` mode, up to `5000000` bytes-per-minute. If even this is exceeded, you will get a `429` error.
+//
+// The "bytes" used by a request is calculated as `sum(150 + query.encode('utf-8') + d.encode('utf-8') for d in documents)`. Note a baseline overhead of `150` bytes, and that the query bytes are included for each document, as rerankers are cross-encoders. The maximum per-request payload size is `5000000` bytes.
+//
+// To increase your ratelimits, subscribe to a higher tier on the [ZeroEntropy dashboard](https://dashboard.zeroentropy.dev/billing). Any payments made for subscriptions in a calendar month will be deducted from your usage charges for that month.
+//
+// To request even higher ratelimits, please contact [founders@zeroentropy.dev](mailto:founders@zeroentropy.dev) or message us on [Discord](https://go.zeroentropy.dev/discord) or [Slack](https://go.zeroentropy.dev/slack)!
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -7067,6 +7971,42 @@ func (c *ClientWithResponses) GetModelsUsageCountersUsageModelsCountersPostWithR
 	return ParseGetModelsUsageCountersUsageModelsCountersPostResponse(rsp)
 }
 
+// GetModelsEmbedUsageUsageModelsEmbedPostWithBodyWithResponse Get Models Embed Usage
+//
+// Get embedding usage analytics with model breakdown.
+//
+// Note: Embed events don't have collection_id, so collection filtering is not supported.
+// If collection_names are provided in the request, they will be ignored.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /usage/models/embed (the `GetModelsEmbedUsageUsageModelsEmbedPost` operationId).
+func (c *ClientWithResponses) GetModelsEmbedUsageUsageModelsEmbedPostWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*GetModelsEmbedUsageUsageModelsEmbedPostResponse, error) {
+	rsp, err := c.GetModelsEmbedUsageUsageModelsEmbedPostWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetModelsEmbedUsageUsageModelsEmbedPostResponse(rsp)
+}
+
+// GetModelsEmbedUsageUsageModelsEmbedPostWithResponse Get Models Embed Usage
+//
+// Get embedding usage analytics with model breakdown.
+//
+// Note: Embed events don't have collection_id, so collection filtering is not supported.
+// If collection_names are provided in the request, they will be ignored.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /usage/models/embed (the `GetModelsEmbedUsageUsageModelsEmbedPost` operationId).
+func (c *ClientWithResponses) GetModelsEmbedUsageUsageModelsEmbedPostWithResponse(ctx context.Context, body GetModelsEmbedUsageUsageModelsEmbedPostJSONRequestBody, reqEditors ...RequestEditorFn) (*GetModelsEmbedUsageUsageModelsEmbedPostResponse, error) {
+	rsp, err := c.GetModelsEmbedUsageUsageModelsEmbedPost(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetModelsEmbedUsageUsageModelsEmbedPostResponse(rsp)
+}
+
 // GetModelsRerankerUsageUsageModelsRerankerPostWithBodyWithResponse Get Models Reranker Usage
 //
 // Get reranker usage analytics with model breakdown.
@@ -7232,6 +8172,39 @@ func ParseDeleteApiKeyAdminDeleteApiKeyPostResponse(rsp *http.Response) (*Delete
 	return response, nil
 }
 
+// ParseGetOrganizationAdminGetOrganizationPostResponse parses an HTTP response from a GetOrganizationAdminGetOrganizationPostWithResponse call
+func ParseGetOrganizationAdminGetOrganizationPostResponse(rsp *http.Response) (*GetOrganizationAdminGetOrganizationPostResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetOrganizationAdminGetOrganizationPostResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GetOrganizationResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListApiKeysAdminListApiKeysPostResponse parses an HTTP response from a ListApiKeysAdminListApiKeysPostWithResponse call
 func ParseListApiKeysAdminListApiKeysPostResponse(rsp *http.Response) (*ListApiKeysAdminListApiKeysPostResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -7274,6 +8247,39 @@ func ParseUpdateApiKeyAdminUpdateApiKeyPostResponse(rsp *http.Response) (*Update
 	}
 
 	response := &UpdateApiKeyAdminUpdateApiKeyPostResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DefaultResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateOrganizationAdminUpdateOrganizationPostResponse parses an HTTP response from a UpdateOrganizationAdminUpdateOrganizationPostWithResponse call
+func ParseUpdateOrganizationAdminUpdateOrganizationPostResponse(rsp *http.Response) (*UpdateOrganizationAdminUpdateOrganizationPostResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateOrganizationAdminUpdateOrganizationPostResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -7944,6 +8950,39 @@ func ParseGetModelsUsageCountersUsageModelsCountersPostResponse(rsp *http.Respon
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ModelsUsageCountersResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest HTTPValidationError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetModelsEmbedUsageUsageModelsEmbedPostResponse parses an HTTP response from a GetModelsEmbedUsageUsageModelsEmbedPostWithResponse call
+func ParseGetModelsEmbedUsageUsageModelsEmbedPostResponse(rsp *http.Response) (*GetModelsEmbedUsageUsageModelsEmbedPostResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetModelsEmbedUsageUsageModelsEmbedPostResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []EmbedUsageResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

@@ -1,12 +1,12 @@
 # go-zeroentropy
 
-Unofficial Go client for the ZeroEntropy API, generated from the public OpenAPI document linked by the vendor Python SDK. If you only want to use the client from an agent, read [.agents/skills/go-zeroentropy/SKILL.md](.agents/skills/go-zeroentropy/SKILL.md) instead; this file is about changing the code.
+Unofficial Go client for the ZeroEntropy API, generated from the public OpenAPI document the ZeroEntropy API serves. If you only want to use the client from an agent, read [.agents/skills/go-zeroentropy/SKILL.md](.agents/skills/go-zeroentropy/SKILL.md) instead; this file is about changing the code.
 
 ## Architecture
 
 One generated package, `zeroentropy`, at the module root, driven by `gen.go`:
 
-`scripts/fetch-spec.sh` downloads `https://raw.githubusercontent.com/ZeroEntropy-AI/zeroentropy-python/main/.stats.yml`, reads `openapi_spec_url`, and downloads that Stainless-hosted document to `api/openapi.json`. `scripts/patch-spec.sh` writes `api/openapi.fixed.json`, converting unsupported OpenAPI 3.1 schemas to 3.0.3. oapi-codegen uses `config.yaml` to generate `client.gen.go`.
+`scripts/fetch-spec.sh` downloads the document the API serves at `https://api.zeroentropy.dev/v1/openapi.json` to `api/openapi.json`. `scripts/patch-spec.sh` writes `api/openapi.fixed.json`, converting unsupported OpenAPI 3.1 schemas to 3.0.3. oapi-codegen uses `config.yaml` to generate `client.gen.go`.
 
 ## Stack
 
@@ -36,12 +36,11 @@ make sec       # gitleaks, govulncheck, semgrep
 
 ## Project-specific landmines
 
-- The SDK metadata supplies a content-hashed spec URL that changes on updates. Always resolve it from `.stats.yml`, rather than pinning the download script to a particular hash.
 - The OpenAPI 3.1 spec uses nullable `anyOf` unions, `const` and `prefixItems`. `patch-spec.sh` converts these to nullable schemas, singleton enums and homogeneous array items, retaining tuple length bounds. Nullable references use `allOf` so the loader retains nullability.
 - Keep the `number` to `float64` mapping in `config.yaml`; scores and embeddings otherwise become `float32`.
-- Generate all 27 operations, including the spec's hidden administration, usage and download endpoints. The SDK metadata's configured endpoint count is smaller than the spec's operation count.
+- Generate all 30 operations, including the spec's hidden administration, usage and download endpoints.
 - Method names retain the spec's long operation IDs. The base URL includes `/v1`; most read operations use POST with a JSON body.
-- Document and image download schemas advertise JSON, but their descriptions specify binary responses. `patch-spec.sh` maps these two empty JSON success schemas to `json.RawMessage`, preserving JSON bytes without decoding arbitrary objects. Use raw response methods or `Body` for binary content.
+- Document and image download schemas advertise JSON, but their descriptions specify binary responses. `patch-spec.sh` maps these two empty JSON success schemas to `json.RawMessage`, preserving JSON bytes without decoding arbitrary objects, and fails if either schema stops being empty. Use raw response methods or `Body` for binary content.
 - `make generate` always downloads the current spec, so it can change the client even when nothing here changed. Review the generated diff before committing it.
 - `.github/workflows/regen.yml` regenerates the client every day and releases the result. Its automated fixes may not touch `fix_protected_paths`, including workflows, the Makefile, `AGENTS.md`, `.agents/rules/`, lint, security and spec download scripts and their configs. A failure requiring changes there needs a manual fix.
 

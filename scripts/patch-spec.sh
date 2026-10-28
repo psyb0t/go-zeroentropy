@@ -4,7 +4,8 @@
 # is not ignored); const becomes a singleton enum. The homogeneous page_span
 # prefixItems tuple becomes integer items with its existing length bounds.
 # Two download responses have empty JSON schemas. Map these to json.RawMessage
-# to retain their JSON bytes without decoding arbitrary untyped objects.
+# to retain their JSON bytes without decoding arbitrary untyped objects; the
+# script fails if either schema is no longer empty, so the patch gets reviewed.
 # All paths and operations are retained. The original download stays untouched.
 set -euo pipefail
 trap 'on_error "$?" "$LINENO"' ERR
@@ -66,7 +67,7 @@ walk(
     (.;
       if .paths[$path].get.responses["200"].content["application/json"].schema == {}
       then .paths[$path].get.responses["200"].content["application/json"].schema["x-go-type"] = "json.RawMessage"
-      else . end)
+      else error("\($path) no longer has an empty JSON success schema; review the json.RawMessage patch") end)
 '
 
 main() {
